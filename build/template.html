@@ -1,0 +1,438 @@
+<title>TDAS Pilot Findings</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one long lab-report column; findings set as text-left / chart-right rows that stack on phones.
+   Identity: a cool slate "bench" palette with the thermal pair (hot ember / cool steel) carrying all meaning. */
+:root{
+  --paper:#f3f6f5; --sheet:#ffffff; --ink:#15211f; --muted:#5a6a67; --rule:#d3dcd9; --faint:#e8eeec;
+  --hot:#c4462b; --cool:#2d6ca6; --alt:#2f8a57; --rand:#7b4ea2;
+  --pass:#1f7a4a; --pass-bg:#e1f2e8; --fail:#b23a2a; --fail-bg:#f8e3df; --na:#6b7472; --na-bg:#eceff0;
+  --knee:#15211f;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --step--1:.8125rem; --step-0:1rem; --step-1:1.25rem; --step-2:1.6rem; --step-3:2.2rem; --step-4:clamp(2.2rem,5.2vw,3.6rem);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0e1514; --sheet:#141d1c; --ink:#e3ece9; --muted:#9aaba7; --rule:#2a3836; --faint:#1b2624;
+  --hot:#f0765a; --cool:#6aa6dd; --alt:#5fc08a; --rand:#b48ad8;
+  --pass:#73d39e; --pass-bg:#173326; --fail:#f2917f; --fail-bg:#3a1d18; --na:#a7b1af; --na-bg:#222c2a;
+  --knee:#e3ece9; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0e1514; --sheet:#141d1c; --ink:#e3ece9; --muted:#9aaba7; --rule:#2a3836; --faint:#1b2624;
+  --hot:#f0765a; --cool:#6aa6dd; --alt:#5fc08a; --rand:#b48ad8;
+  --pass:#73d39e; --pass-bg:#173326; --fail:#f2917f; --fail-bg:#3a1d18; --na:#a7b1af; --na-bg:#222c2a;
+  --knee:#e3ece9; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:var(--step-0);line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1080px;margin-inline:auto}
+h1,h2,h3{font-family:var(--f-display);font-stretch:112%;text-wrap:balance;margin:0;line-height:1.08}
+h1{font-size:var(--step-4);font-weight:850;letter-spacing:-.01em}
+h2{font-size:var(--step-3);font-weight:800}
+h3{font-size:var(--step-1);font-weight:700;font-stretch:105%}
+p{margin:0;max-width:65ch}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--f-mono);font-size:var(--step--1);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+a{color:var(--cool)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--cool);outline-offset:3px}
+
+/* masthead */
+.mast{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;align-items:center;padding-block:18px;border-bottom:1px solid var(--rule)}
+.verdict{font-family:var(--f-mono);font-size:var(--step--1);font-weight:500;letter-spacing:.06em;padding:4px 10px;border:1.5px solid var(--fail);color:var(--fail);border-radius:3px}
+
+/* hero */
+.hero{display:grid;gap:28px;padding-block:44px 36px}
+.hero .lede{font-size:var(--step-1);color:var(--muted);max-width:60ch}
+.hero h1 .hot{color:var(--hot)} .hero h1 .cool{color:var(--cool)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.stat{background:var(--sheet);padding:18px 20px;display:grid;gap:4px;align-content:start}
+.stat b{font-family:var(--f-display);font-stretch:105%;font-size:var(--step-3);font-weight:800;line-height:1}
+.stat span{color:var(--muted);font-size:.9rem}
+@media (max-width:720px){.stats{grid-template-columns:1fr}}
+
+/* thermal scale */
+.scale{display:grid;gap:10px;padding:22px 0 8px}
+.bar{position:relative;height:16px;border-radius:2px;background:linear-gradient(90deg,var(--cool) 0%,var(--alt) 45%,#d8a23a 78%,var(--hot) 92%,var(--hot) 100%)}
+.marks{position:relative;height:58px}
+.mark{position:absolute;top:0;transform:translateX(-50%);display:grid;justify-items:center;font-family:var(--f-mono);font-size:.72rem;color:var(--muted);white-space:nowrap;text-align:center;line-height:1.3}
+.mark::before{content:"";width:1px;height:12px;background:var(--ink);margin-bottom:3px}
+.mark strong{color:var(--ink);font-weight:500}
+
+section{padding-block:44px;border-top:1px solid var(--rule);display:grid;gap:22px}
+.row{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px;align-items:start}
+.row.rev{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+@media (max-width:860px){.row,.row.rev{grid-template-columns:1fr}}
+.text{display:grid;gap:14px;min-width:0}
+.fig{background:var(--sheet);border:1px solid var(--rule);padding:14px 14px 10px;min-width:0}
+.fig figcaption{font-size:.84rem;color:var(--muted);margin-top:8px;max-width:none}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+svg .axis{stroke:var(--rule);stroke-width:1}
+svg .grid{stroke:var(--faint);stroke-width:1}
+svg .knee{stroke:var(--knee);stroke-width:1;stroke-dasharray:4 3}
+svg .lbl-strong{fill:var(--ink)}
+.c-hot_first{--c:var(--hot)} .c-cool_first{--c:var(--cool)} .c-alternating{--c:var(--alt)} .c-random{--c:var(--rand)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-family:var(--f-mono);font-size:.78rem;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:6px;vertical-align:-1px}
+
+/* order strips */
+.strips{display:grid;gap:10px}
+.strip{display:grid;grid-template-columns:7.5rem minmax(0,1fr);gap:12px;align-items:center}
+.strip span{font-family:var(--f-mono);font-size:.8rem}
+.strip canvas{width:100%;height:22px;display:block;border-radius:2px}
+
+/* gates */
+.gates{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.gate{background:var(--sheet);border:1px solid var(--rule);padding:14px 16px;display:grid;gap:6px;align-content:start}
+.gate header{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.gate .id{font-family:var(--f-display);font-weight:800;font-size:var(--step-1)}
+.chip{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;padding:2px 8px;border-radius:999px;font-weight:500;white-space:nowrap}
+.chip.pass{color:var(--pass);background:var(--pass-bg)} .chip.fail{color:var(--fail);background:var(--fail-bg)} .chip.na{color:var(--na);background:var(--na-bg)}
+.gate p{font-size:.9rem;color:var(--muted)}
+.gate .q{color:var(--ink);font-weight:500;font-size:.95rem}
+
+/* tables, lists */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);background:var(--sheet)}
+table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+th,td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--faint);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:var(--f-mono);font-weight:500;font-size:.74rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+tbody tr:last-child td{border-bottom:0}
+ul.facts{margin:0;padding-left:1.1em;display:grid;gap:8px;max-width:65ch}
+ul.facts li::marker{color:var(--muted)}
+.note{border-left:3px solid var(--rule);padding:4px 0 4px 14px;color:var(--muted);font-size:.92rem;max-width:65ch}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.card{background:var(--sheet);border:1px solid var(--rule);padding:18px 20px;display:grid;gap:10px;align-content:start}
+footer{border-top:1px solid var(--rule);padding-block:28px 0;display:grid;gap:10px;color:var(--muted);font-size:.86rem}
+footer p{max-width:85ch}
+@media (prefers-reduced-motion:no-preference){.draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.4s ease-out .2s forwards}}
+@keyframes draw{to{stroke-dashoffset:0}}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <span class="eyebrow">TDAS hardware pilot &middot; Raspberry Pi 4 Model B &middot; preregistered &middot; 18 Oct 2026</span>
+    <span class="verdict">PREREGISTERED VERDICT: LIKELY KILL</span>
+  </header>
+
+  <div class="hero">
+    <h1>Reordering jobs moved the <span class="hot">heat</span>.<br>It did not move the <span class="cool">latency</span>.</h1>
+    <p class="lede">We ran the same 600 jobs in four different orders on a passively cooled Raspberry Pi&nbsp;4, to see whether
+      thermal-aware ordering lowers tail latency. Ordering changed how long the chip spent above its throttling point.
+      Tail latency, mean latency and throughput did not change in any statistically supported way.</p>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="scale" aria-label="Temperature scale of the experiment">
+    <span class="eyebrow">Where the experiment lives on the temperature scale (&deg;C)</span>
+    <div class="bar"></div>
+    <div class="marks" id="marks"></div>
+  </div>
+
+  <section id="setup">
+    <span class="eyebrow">The setup</span>
+    <div class="row">
+      <div class="text">
+        <h2>Same work, different order</h2>
+        <p>Every sequence holds 300 HOT jobs and 300 COOL jobs. HOT keeps all four cores busy (CPU duty 0.99). COOL does a
+          third of the arithmetic and sleeps the rest of the time (duty 0.38). When the chip is cold both take the same
+          time: <span class="mono" id="g3txt"></span>.</p>
+        <p>Each sequence starts after a cooldown, then a warm-up to <span class="mono">77&nbsp;&deg;C</span>, just below
+          the knee. There are four orderings, each run 10 times in an interleaved, counterbalanced schedule: 40
+          sequences and 24,000 jobs in about 3 hours.</p>
+        <p class="note">The hypotheses, the six gates and the verdict rule were fixed in writing before the data. Every
+          later change was recorded as a dated amendment.</p>
+      </div>
+      <figure class="fig" style="margin:0">
+        <div class="strips" id="strips"></div>
+        <figcaption>The actual job order of each ordering, one cell per job (600 per sequence).
+          <span style="color:var(--hot)">&#9632;</span> HOT, <span style="color:var(--cool)">&#9632;</span> COOL. The
+          random row is the first random sequence that ran.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="gates">
+    <span class="eyebrow">The preregistered gates</span>
+    <h2>Four pass, two fail, one cannot be tested</h2>
+    <div class="gates" id="gatelist"></div>
+  </section>
+
+  <section id="heat">
+    <span class="eyebrow">Finding 1 &middot; G4</span>
+    <div class="row">
+      <div class="text">
+        <h2>Ordering changes the thermal trajectory</h2>
+        <p>Hot-first climbs toward the knee during its HOT half. Cool-first first cools, then climbs. Alternating and
+          random settle near 71&ndash;72&nbsp;&deg;C and never cross it.</p>
+        <p>Median time above the knee per sequence was <b class="mono">13.3&nbsp;s</b> for hot-first and
+          <b class="mono">0&nbsp;s</b> for alternating and random. The preregistered contrast is
+          <span class="mono" id="g4txt"></span>.</p>
+      </div>
+      <figure class="fig" style="margin:0">
+        <div class="legend" id="leg1"></div>
+        <svg id="traj" viewBox="0 0 640 330" role="img" aria-label="Temperature during the sequences, by ordering"></svg>
+        <figcaption>SoC temperature during the 600-job sequences: median line and interquartile band across 10
+          sequences per ordering. The dashed line is the 80.8&nbsp;&deg;C knee.</figcaption>
+      </figure>
+    </div>
+    <figure class="fig" style="margin:0">
+      <svg id="tak" viewBox="0 0 640 230" role="img" aria-label="Time above the knee per sequence"></svg>
+      <figcaption>Time above the knee in each of the 40 sequences (dots) and the median per ordering (bar).</figcaption>
+    </figure>
+  </section>
+
+  <section id="latency">
+    <span class="eyebrow">Finding 2 &middot; G5 and G5b</span>
+    <div class="row rev">
+      <figure class="fig" style="margin:0">
+        <svg id="p99" viewBox="0 0 640 300" role="img" aria-label="P99 latency per sequence"></svg>
+        <figcaption>P99 latency of each sequence (dots) and the median per ordering (bar). The median P99 differs by at
+          most 0.88&nbsp;ms (0.44&nbsp;%) between orderings.</figcaption>
+      </figure>
+      <div class="text">
+        <h2>The tail stays put</h2>
+        <p>Median P99 per sequence ranges from <b class="mono">201.3</b> to <b class="mono">202.1&nbsp;ms</b> across the
+          four orderings. Uncorrected, one pair's interval excludes zero. After the preregistered Holm correction over
+          six pairs, no pair does.</p>
+        <p>Mean latency (197.1&ndash;197.2&nbsp;ms) and throughput (5.013&ndash;5.015&nbsp;jobs/s) show no supported
+          difference either.</p>
+        <p class="note">A non-significant result is not proof that no effect exists. With 10 sequences per ordering,
+          differences smaller than about 1&ndash;5&nbsp;ms could have been missed.</p>
+      </div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Pair (median P99, ms)</th><th>Difference</th><th>95% CI</th><th>p (bootstrap)</th><th>Holm</th><th>Cliff's &delta;</th></tr></thead>
+        <tbody id="pairs"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="why">
+    <span class="eyebrow">Why the heat did not reach the tail &middot; exploratory, cannot change the verdict</span>
+    <div class="row">
+      <div class="text">
+        <h2>The slowdown is a step, and this run rarely reached it</h2>
+        <p>Experiment 2 shows that latency is flat below the knee and steps up only on the throttling plateau. That
+          plateau needs minutes of continuous load. A hot-first sequence runs at most 60&nbsp;s of HOT work.</p>
+        <ul class="facts" id="whyfacts"></ul>
+      </div>
+      <figure class="fig" style="margin:0">
+        <svg id="st" viewBox="0 0 640 320" role="img" aria-label="Service time against temperature"></svg>
+        <figcaption>Experiment 2: median HOT job latency per 2&nbsp;&deg;C bin, against temperature (two ramps).
+          G2 passed with slope <span class="mono" id="g2txt"></span>, but the shape is a step at the knee.</figcaption>
+      </figure>
+    </div>
+    <div class="row rev">
+      <figure class="fig" style="margin:0">
+        <div class="legend" id="leg2"></div>
+        <svg id="session" viewBox="0 0 640 300" role="img" aria-label="P99 per sequence across the session"></svg>
+        <figcaption>P99 of each sequence against the time it started. During the first ~70 minutes the board needed
+          long cooldowns, and the blocked orderings ran hotter and slower.</figcaption>
+      </figure>
+      <div class="text">
+        <h3>The board's thermal state shifted mid-session</h3>
+        <p>In the first ~70 minutes, cooldowns took 152&ndash;262&nbsp;s (median per repetition), and 5 of 6 hot-first
+          and cool-first sequences spent 32&ndash;37&nbsp;s above the knee. Their P99 was 205.5&ndash;210.8&nbsp;ms.
+          After that, cooldowns took 57&ndash;75&nbsp;s and P99 sat at 200.1&ndash;202.5&nbsp;ms in every ordering.</p>
+        <p>The cause is unknown: room temperature and airflow were not measured. Every repetition held all four
+          orderings, so the shift adds noise rather than bias. It points to a hypothesis for a future, separately
+          preregistered study: when a sequence spends more than ~30&nbsp;s above the knee, ordering might move P99 by a
+          few milliseconds.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="claims">
+    <span class="eyebrow">What this does and does not show</span>
+    <div class="two">
+      <div class="card">
+        <h3>Supported</h3>
+        <ul class="facts">
+          <li>A throttle knee at 80.8&nbsp;&deg;C, read from the firmware ARM clock. The Linux frequency file showed
+            1800&nbsp;MHz throughout and missed it.</li>
+          <li>Service time rises with temperature, as a step at the knee (+6&ndash;8&nbsp;% on the plateau).</li>
+          <li>Job order changes the time spent above the knee (13.3&nbsp;s against 0&nbsp;s).</li>
+          <li>At this operating point, job order did not produce a statistically supported change in P99, P95, mean
+            latency or throughput.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Not shown, or limited</h3>
+        <ul class="facts">
+          <li>That ordering never affects latency. Small effects, or effects at other thermal states, remain possible.</li>
+          <li>Results beyond one device, one synthetic workload, one start temperature (77&nbsp;&deg;C) and one
+            sequence length (600 jobs).</li>
+          <li>The cooling hardware on the test day, and the room temperature, were not recorded.</li>
+          <li>With 600 jobs, P99 is the 7th-slowest job, so it reacts only when several jobs are slowed.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Method.</b> Raspberry Pi 4 Model B Rev 1.4, Debian 13, kernel 6.18.50, governor <span class="mono">performance</span>.
+      Temperature was sampled from sysfs at 5&nbsp;Hz, and throttle flags were read between jobs. A watchdog that
+      starts no processes enforced an 85&nbsp;&deg;C stop. Statistics: the unit of analysis is the sequence; percentile
+      bootstrap with 10,000 resamples and seed 0; two-sided bootstrap p-values; Holm correction; Cliff's &delta;.</p>
+    <p><b>Provenance.</b> Every number on this page is computed from the archived raw run records. Each archive's
+      SHA-256 hash matches the copy on the device. Independently written code reproduces every gate statistic and the
+      verdict exactly. The full paper, the evidence audit, the reproduction scripts and the run records live in the
+      project repository (<span class="mono">paper/</span> and <span class="mono">provenance/</span>).</p>
+  </footer>
+</div>
+
+<script>
+const D = __DATA__;
+const ORD = ["hot_first","cool_first","alternating","random"];
+const NAME = {hot_first:"hot-first",cool_first:"cool-first",alternating:"alternating",random:"random"};
+const NS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+const fmt = (x,d=2) => Number(x).toFixed(d);
+function el(tag, attrs={}, parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function txt(parent,x,y,s,attrs={}){ const t=el("text",{x,y,...attrs},parent); t.textContent=s; return t; }
+function cssvar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+/* --- stats --- */
+$("stats").innerHTML = `
+  <div class="stat"><b class="mono">13.3&nbsp;s&nbsp;vs&nbsp;0&nbsp;s</b><span>median time above the throttling knee per sequence, hot-first vs alternating (G4 passed)</span></div>
+  <div class="stat"><b class="mono">201.3&ndash;202.1&nbsp;ms</b><span>median P99 latency across the four orderings; no pair differs after Holm correction (G5 failed)</span></div>
+  <div class="stat"><b class="mono">40 / 40</b><span>valid sequences (10 per ordering, 24,000 jobs), with no reruns, no under-voltage and no safety stop</span></div>`;
+
+/* --- temperature scale marks --- */
+(() => {
+  const lo=40, hi=87, pos=t=>((t-lo)/(hi-lo)*100).toFixed(2)+"%";
+  const marks=[[D.session.idle_temp_c,"idle","45.3"],[48.3,"cooldown","48.3"],[61,"cool-first dip","~61"],[71.5,"alt / random","~71.5"],[77.4,"start","77.4"],[D.knee,"knee","80.8"],[85,"watchdog stop","85.0"]];
+  const m=$("marks");
+  marks.forEach(([t,l,v],i)=>{ const d=document.createElement("div"); d.className="mark"; d.style.left=pos(t);
+    d.style.top=(i%2? "26px":"0"); d.innerHTML=`<strong>${v}</strong>${l}`; m.appendChild(d); });
+})();
+
+$("g3txt").textContent = `HOT ${fmt(D.g3.hot)} ms, COOL ${fmt(D.g3.cool)} ms, gap ${fmt(D.g3.gap*100,3)} %`;
+$("g4txt").textContent = `+${fmt(D.g4.diff,1)} s, 95% CI [${fmt(D.g4.ci_lo,1)}, ${fmt(D.g4.ci_hi,1)}]`;
+$("g2txt").textContent = `+${fmt(D.g2.slope,3)} ms/°C [${fmt(D.g2.ci[0],3)}, ${fmt(D.g2.ci[1],3)}]`;
+
+/* --- order strips (real patterns) --- */
+(() => {
+  const pats = {hot_first:"1".repeat(300)+"0".repeat(300), cool_first:"0".repeat(300)+"1".repeat(300),
+                alternating:"10".repeat(300), random:D.random_pattern};
+  const wrap=$("strips");
+  ORD.forEach(m=>{
+    const row=document.createElement("div"); row.className="strip";
+    row.innerHTML=`<span>${NAME[m]}</span>`; const cv=document.createElement("canvas"); row.appendChild(cv); wrap.appendChild(row);
+    const paint=()=>{ const w=cv.clientWidth||600, h=22, dpr=window.devicePixelRatio||1; cv.width=w*dpr; cv.height=h*dpr;
+      const c=cv.getContext("2d"); c.scale(dpr,dpr); const hot=cssvar("--hot"), cool=cssvar("--cool"); const p=pats[m], cw=w/p.length;
+      for(let i=0;i<p.length;i++){ c.fillStyle=p[i]==="1"?hot:cool; c.fillRect(i*cw,0,Math.max(cw,0.6)+0.25,h); } };
+    paint(); new ResizeObserver(paint).observe(cv);
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change",paint);
+    new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  });
+})();
+
+/* --- gates --- */
+(() => {
+  const G = [
+    ["G1","pass","Is there a throttle knee?","Yes: 80.8 °C, where the firmware ARM clock first drops below 98 % of 1800 MHz (depth 9.5 %)."],
+    ["G2","pass","Does service time rise with temperature?",`Yes: +${fmt(D.g2.slope,3)} ms/°C [${fmt(D.g2.ci[0],3)}, ${fmt(D.g2.ci[1],3)}], over ${D.g2.bins} bins and ${D.g2.jobs.toLocaleString()} jobs.`],
+    ["G3","pass","Are HOT and COOL equal when cold?",`Yes: gap ${fmt(D.g3.gap*100,3)} % [${fmt(D.g3.lo*100,3)}, ${fmt(D.g3.hi*100,3)}] %, within the ±2 % target.`],
+    ["G4","pass","Does ordering change time above the knee?",`Yes: +${fmt(D.g4.diff,1)} s [${fmt(D.g4.ci_lo,1)}, ${fmt(D.g4.ci_hi,1)}], hot-first vs alternating.`],
+    ["G5","fail","Does ordering change P99 latency?","No pair of the six survives the Holm correction. Median P99 is 201.3–202.1 ms."],
+    ["G5b","fail","Do mean latency or throughput change?","No: the smallest p-values (0.037 and 0.045) fail Holm's first step."],
+    ["G6","na","Is the effect mediated?","Not testable: the gate needs G4 and G5 to pass."],
+  ];
+  const lab={pass:"PASS",fail:"FAIL",na:"NOT TESTABLE"};
+  $("gatelist").innerHTML = G.map(([id,s,q,a])=>`<article class="gate"><header><span class="id">${id}</span><span class="chip ${s}">${lab[s]}</span></header><p class="q">${q}</p><p>${a}</p></article>`).join("");
+})();
+
+/* --- legends --- */
+["leg1","leg2"].forEach(id=>{ $(id).innerHTML = ORD.map(m=>`<span class="c-${m}"><i></i>${NAME[m]}</span>`).join(""); });
+
+/* --- generic axes --- */
+function axes(svg,{W,H,m,x,y,xt,yt,xl,yl,xfmt=v=>v,yfmt=v=>v}){
+  const X=v=>m.l+(v-x[0])/(x[1]-x[0])*(W-m.l-m.r), Y=v=>H-m.b-(v-y[0])/(y[1]-y[0])*(H-m.t-m.b);
+  yt.forEach(v=>{ el("line",{x1:m.l,x2:W-m.r,y1:Y(v),y2:Y(v),class:"grid"},svg); txt(svg,m.l-8,Y(v)+4,yfmt(v),{"text-anchor":"end"}); });
+  (xt||[]).forEach(v=>{ txt(svg,X(v),H-m.b+16,xfmt(v),{"text-anchor":"middle"}); });
+  el("line",{x1:m.l,x2:W-m.r,y1:H-m.b,y2:H-m.b,class:"axis"},svg);
+  if(xl) txt(svg,(m.l+W-m.r)/2,H-4,xl,{"text-anchor":"middle"});
+  if(yl) txt(svg,14,(m.t+H-m.b)/2,yl,{"text-anchor":"middle",transform:`rotate(-90 14 ${(m.t+H-m.b)/2})`});
+  return {X,Y};
+}
+
+/* --- trajectory --- */
+(() => {
+  const svg=$("traj"), W=640,H=330, m={l:52,r:16,t:12,b:42};
+  const {X,Y}=axes(svg,{W,H,m,x:[0,118],y:[58,86],xt:[0,20,40,60,80,100,118],yt:[60,65,70,75,80,85],xl:"time since sequence start (s)",yl:"SoC temperature (°C)"});
+  el("line",{x1:m.l,x2:W-m.r,y1:Y(D.knee),y2:Y(D.knee),class:"knee"},svg);
+  txt(svg,W-m.r-4,Y(D.knee)-6,"knee 80.8 °C",{"text-anchor":"end",class:"lbl-strong"});
+  ORD.forEach(o=>{
+    const t=D.traj[o], g=el("g",{class:`c-${o}`},svg);
+    const band=t.q3.map((v,i)=>`${X(i)},${Y(v)}`).concat(t.q1.map((v,i)=>`${X(i)},${Y(v)}`).reverse()).join(" ");
+    el("polygon",{points:band,fill:"var(--c)","fill-opacity":"0.14",stroke:"none"},g);
+    const d="M"+t.med.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("L");
+    const p=el("path",{d,fill:"none",stroke:"var(--c)","stroke-width":"2",class:"draw"},g);
+    p.style.setProperty("--len",Math.ceil(p.getTotalLength?p.getTotalLength():2000));
+  });
+})();
+
+/* --- per-sequence dot strips --- */
+function strip(svgId,field,{y,yt,yl,yfmt=v=>v,H=230}){
+  const svg=$(svgId), W=640, m={l:56,r:16,t:12,b:34};
+  const {X,Y}=axes(svg,{W,H,m,x:[0,4],y,yt,yl,yfmt});
+  ORD.forEach((o,i)=>{
+    const g=el("g",{class:`c-${o}`},svg), cx=X(i+0.5);
+    txt(svg,cx,H-m.b+18,NAME[o],{"text-anchor":"middle"});
+    const vals=D.seqs.filter(s=>s.mode===o).map(s=>s[field]);
+    vals.forEach((v,k)=>{ const jitter=((k*37)%11-5)*3.2; const c=el("circle",{cx:cx+jitter,cy:Y(v),r:4.2,fill:"var(--c)","fill-opacity":"0.25",stroke:"var(--c)","stroke-width":"1.4"},g);
+      el("title",{},c).textContent=`${NAME[o]}: ${v}`; });
+    const sorted=[...vals].sort((a,b)=>a-b), med=(sorted[4]+sorted[5])/2;
+    el("line",{x1:cx-34,x2:cx+34,y1:Y(med),y2:Y(med),stroke:"var(--ink)","stroke-width":"2.4"},svg);
+    txt(svg,cx+38,Y(med)+4,yfmt(med),{class:"lbl-strong"});
+  });
+}
+strip("tak","tak",{y:[0,40],yt:[0,10,20,30,40],yl:"seconds above knee",yfmt:v=>fmt(v,1)});
+strip("p99","p99",{y:[199.5,211.5],yt:[200,202,204,206,208,210],yl:"P99 latency (ms)",yfmt:v=>fmt(v,1),H:300});
+
+/* --- pairwise table --- */
+$("pairs").innerHTML = D.g5.map(p=>`<tr><td>${NAME[p.a]} &minus; ${NAME[p.b]}</td><td>${p.diff>=0?"+":""}${fmt(p.diff)}</td><td>[${fmt(p.ci_lo)}, ${fmt(p.ci_hi)}]</td><td>${fmt(p.p_value,3)}</td><td><span class="chip ${p.survives_holm?"pass":"na"}">${p.survives_holm?"SURVIVES":"DOES NOT SURVIVE"}</span></td><td>${p.cliffs_delta>=0?"+":""}${fmt(p.cliffs_delta)}</td></tr>`).join("");
+
+/* --- why facts --- */
+(() => {
+  const h=D.explore.hot_by_knee, j=D.explore.jobs_over_205, med=a=>{const s=[...a].sort((x,y)=>x-y);return (s[4]+s[5])/2;};
+  $("whyfacts").innerHTML = [
+    `HOT jobs that started at or above the knee took a median ${fmt(h.at_or_above_knee.median)} ms, against ${fmt(h.below_knee.median)} ms below it: only +${fmt((h.at_or_above_knee.median/h.below_knee.median-1)*100,1)} %.`,
+    `Only ${ORD.map(o=>fmt(med(j[o]),1)).join(", ")} jobs per sequence (median, by ordering) exceeded 205 ms, out of 600.`,
+    `With 600 jobs, P99 is the 7th-slowest job. That job is usually an ordinary one of about 200–202 ms, not a throttled one.`,
+  ].map(s=>`<li>${s}</li>`).join("");
+})();
+
+/* --- s(T) step --- */
+(() => {
+  const svg=$("st"), W=640,H=320, m={l:56,r:16,t:12,b:42};
+  const {X,Y}=axes(svg,{W,H,m,x:[44,86],y:[195,213.5],xt:[45,50,55,60,65,70,75,80,85],yt:[196,200,204,208,212],xl:"bin-median temperature before dispatch (°C)",yl:"bin-median latency (ms)"});
+  el("line",{x1:X(D.knee),x2:X(D.knee),y1:m.t,y2:H-m.b,class:"knee"},svg);
+  txt(svg,X(D.knee)-6,m.t+12,"knee",{"text-anchor":"end",class:"lbl-strong"});
+  D.exp2.forEach(([ramp,t,lat,n])=>{ const c=t>=D.knee?"var(--hot)":"var(--cool)";
+    const s= ramp===0 ? el("circle",{cx:X(t),cy:Y(lat),r:4.6,fill:c,"fill-opacity":"0.3",stroke:c,"stroke-width":"1.5"},svg)
+                      : el("rect",{x:X(t)-4,y:Y(lat)-4,width:8,height:8,fill:c,"fill-opacity":"0.3",stroke:c,"stroke-width":"1.5"},svg);
+    el("title",{},s).textContent=`ramp ${ramp}: ${t} °C, ${lat} ms (${n} jobs)`; });
+  txt(svg,X(46),Y(197.6),"flat: 196.2–196.5 ms below the knee",{});
+  txt(svg,X(79.2),Y(211.6),"plateau: 208–212 ms",{"text-anchor":"end",class:"lbl-strong"});
+  txt(svg,W-m.r,H-m.b-8,"○ ramp 0   □ ramp 1",{"text-anchor":"end"});
+})();
+
+/* --- session --- */
+(() => {
+  const svg=$("session"), W=640,H=300, m={l:56,r:16,t:12,b:42};
+  const {X,Y}=axes(svg,{W,H,m,x:[-4,180],y:[199.5,211.5],xt:[0,30,60,90,120,150,180],yt:[200,202,204,206,208,210],xl:"sequence start (minutes after the first sequence)",yl:"P99 latency (ms)"});
+  el("rect",{x:X(-4),y:m.t,width:X(70)-X(-4),height:H-m.t-m.b,fill:"var(--faint)"},svg).parentNode.insertBefore(svg.lastChild,svg.firstChild);
+  txt(svg,X(33),m.t+14,"first ~70 min: long cooldowns",{"text-anchor":"middle"});
+  ORD.forEach(o=>{ const g=el("g",{class:`c-${o}`},svg);
+    D.seqs.filter(s=>s.mode===o).forEach(s=>{ const c=el("circle",{cx:X(s.start_min),cy:Y(s.p99),r:4.4,fill:"var(--c)","fill-opacity":"0.3",stroke:"var(--c)","stroke-width":"1.4"},g);
+      el("title",{},c).textContent=`${NAME[o]}, repetition ${s.rep}: P99 ${s.p99} ms, ${s.tak} s above knee, cooldown ${s.cool} s`; }); });
+})();
+</script>
