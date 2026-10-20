@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TDAS Pilot Findings</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -112,6 +117,9 @@ footer p{max-width:85ch}
 @media (prefers-reduced-motion:no-preference){.draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.4s ease-out .2s forwards}}
 @keyframes draw{to{stroke-dashoffset:0}}
 </style>
+</head>
+<body>
+
 
 <div class="wrap">
   <header class="mast">
@@ -436,3 +444,6 @@ $("pairs").innerHTML = D.g5.map(p=>`<tr><td>${NAME[p.a]} &minus; ${NAME[p.b]}</t
       el("title",{},c).textContent=`${NAME[o]}, repetition ${s.rep}: P99 ${s.p99} ms, ${s.tak} s above knee, cooldown ${s.cool} s`; }); });
 })();
 </script>
+
+</body>
+</html>
